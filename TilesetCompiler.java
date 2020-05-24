@@ -26,7 +26,7 @@ public class TilesetCompiler {
 		} else {
 			inputDirectoryLocation = args[0];
 		}
-		String inputResolutionOption;
+		String inputResolutionString;
 		if (args.length == 0) {
 			System.out.println("Select the input resolution for the images:");
 			System.out.println("1) 8x8 pixels");
@@ -34,9 +34,9 @@ public class TilesetCompiler {
 			System.out.println("3) 32x32 pixels");
 			System.out.println("4) 64x64 pixels");
 			System.out.print("Input resolution option: ");
-			inputResolutionOption = input.nextLine();
+			inputResolutionString = input.nextLine();
 		} else {
-			inputResolutionOption = args[1];
+			inputResolutionString = args[1];
 		}
 		String outputTilesetLocation;
 		if (args.length == 0) {
@@ -48,9 +48,9 @@ public class TilesetCompiler {
 		input.close();
 		File inputDirectory = new File(inputDirectoryLocation);
 		if (inputDirectory.isDirectory()) {
-			if (isValidInteger(inputResolutionOption) && Integer.parseInt(inputResolutionOption) >= 1 &&
-					Integer.parseInt(inputResolutionOption) <= 4) {
-				inputLength = (int)Math.pow(2, Integer.parseInt(inputResolutionOption) + 2);
+			if (isValidInteger(inputResolutionString) && Integer.parseInt(inputResolutionString) >= 1 &&
+					Integer.parseInt(inputResolutionString) <= 4) {
+				inputLength = (int)Math.pow(2, Integer.parseInt(inputResolutionString) + 2);
 				System.out.println("(Please wait a few seconds for the images to load.)");
 				ArrayList<BufferedImage> images = addImagesFromDirectory(inputDirectory);
 				BufferedImage tileset = new BufferedImage(256, 256, BufferedImage.TYPE_INT_ARGB);
