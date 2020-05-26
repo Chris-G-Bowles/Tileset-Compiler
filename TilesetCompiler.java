@@ -26,6 +26,10 @@ public class TilesetCompiler {
 		} else {
 			inputDirectoryLocation = args[0];
 		}
+		File inputDirectory = new File(inputDirectoryLocation);
+		if (!inputDirectory.isDirectory()) {
+			error(inputDirectory + " is not a valid directory.");
+		}
 		String inputResolutionString;
 		if (args.length == 0) {
 			System.out.println("Select the input resolution for the images:");
@@ -38,6 +42,16 @@ public class TilesetCompiler {
 		} else {
 			inputResolutionString = args[1];
 		}
+		Scanner lineInput = new Scanner(inputResolutionString);
+		if (!lineInput.hasNextInt()) {
+			error("Invalid input resolution input.");
+		}
+		int inputResolutionOption = lineInput.nextInt();
+		if (inputResolutionOption < 1 || inputResolutionOption > 4) {
+			error("Invalid input resolution option.");
+		}
+		lineInput.close();
+		inputLength = (int)Math.pow(2, inputResolutionOption + 2);
 		String outputTilesetLocation;
 		if (args.length == 0) {
 			System.out.print("Enter the output tileset's location: ");
@@ -45,71 +59,65 @@ public class TilesetCompiler {
 		} else {
 			outputTilesetLocation = args[2];
 		}
+		File outputTilesetDirectory = new File(outputTilesetLocation).getParentFile();
+		if (outputTilesetDirectory != null && !outputTilesetDirectory.exists() && outputTilesetDirectory.mkdirs()) {
+			System.out.println(outputTilesetDirectory + " was created.");
+		}
 		input.close();
-		File inputDirectory = new File(inputDirectoryLocation);
-		if (inputDirectory.isDirectory()) {
-			if (isValidInteger(inputResolutionString) && Integer.parseInt(inputResolutionString) >= 1 &&
-					Integer.parseInt(inputResolutionString) <= 4) {
-				inputLength = (int)Math.pow(2, Integer.parseInt(inputResolutionString) + 2);
-				System.out.println("(Please wait a few seconds for the images to load.)");
-				ArrayList<BufferedImage> images = addImagesFromDirectory(inputDirectory);
-				BufferedImage tileset = new BufferedImage(256, 256, BufferedImage.TYPE_INT_ARGB);
-				int imageIndex = 0;
-				for (int y = 0; y < tileset.getHeight(); y += inputLength) {
-					for (int x = 0; x < tileset.getWidth(); x += inputLength) {
-						for (int imageY = 0; imageY < inputLength; imageY++) {
-							for (int imageX = 0; imageX < inputLength; imageX++) {
-								if (imageIndex < images.size()) {
-									tileset.setRGB(x + imageX, y + imageY,
-											images.get(imageIndex).getRGB(imageX, imageY));
-								} else {
-									tileset.setRGB(x + imageX, y + imageY, -1);
-								}
-							}
-						}
+		System.out.println("(Please wait a few seconds for the images to load.)");
+		ArrayList<BufferedImage> images = addImagesFromDirectory(inputDirectory);
+		BufferedImage tileset = new BufferedImage(256, 256, BufferedImage.TYPE_INT_ARGB);
+		int imageIndex = 0;
+		for (int y = 0; y < tileset.getHeight(); y += inputLength) {
+			for (int x = 0; x < tileset.getWidth(); x += inputLength) {
+				for (int imageY = 0; imageY < inputLength; imageY++) {
+					for (int imageX = 0; imageX < inputLength; imageX++) {
 						if (imageIndex < images.size()) {
-							imageIndex++;
+							tileset.setRGB(x + imageX, y + imageY, images.get(imageIndex).getRGB(imageX, imageY));
+						} else {
+							tileset.setRGB(x + imageX, y + imageY, -1);
 						}
 					}
 				}
-				try {
-					ImageIO.write(tileset, "png", new FileOutputStream(outputTilesetLocation));
-					if (imageIndex == 1) {
-						System.out.println("Success: " + outputTilesetLocation + " was created from " +
-								imageIndex + " image!");
-					} else {
-						System.out.println("Success: " + outputTilesetLocation + " was created from " +
-								imageIndex + " images!");
-					}
-				} catch (Exception e) {
-					System.out.println("Error: Could not create " + outputTilesetLocation + ".");
+				if (imageIndex < images.size()) {
+					imageIndex++;
 				}
-			} else {
-				System.out.println("Error: Invalid input resolution option.");
 			}
+		}
+		try {
+			ImageIO.write(tileset, "png", new FileOutputStream(outputTilesetLocation));
+		} catch (Exception e) {
+			error("Unable to create " + outputTilesetLocation + ".");
+		}
+		if (imageIndex == 1) {
+			System.out.println("Success: " + outputTilesetLocation + " was created from " + imageIndex + " image!");
 		} else {
-			System.out.println("Error: " + inputDirectory + " is not a valid directory.");
+			System.out.println("Success: " + outputTilesetLocation + " was created from " + imageIndex + " images!");
 		}
 	}
 	
 	private static ArrayList<BufferedImage> addImagesFromDirectory(File directory) {
-		File[] files = directory.listFiles();
 		ArrayList<BufferedImage> images = new ArrayList<>();
-		for (int i = 0; i < files.length; i++) {
-			if (files[i].isFile()) {
+		for (File file : directory.listFiles()) {
+			if (file.isFile()) {
+				BufferedImage image;
 				try {
-					BufferedImage image = ImageIO.read(files[i]);
-					if (image.getWidth() == inputLength && image.getHeight() == inputLength) {
-						images.add(image);
-					} else {
-						System.out.println("Error: " + files[i].getPath() + " has an invalid resolution of " +
-								image.getWidth() + "x" + image.getHeight() + " pixels.");
-					}
+					image = ImageIO.read(file);
 				} catch (Exception e) {
-					System.out.println("Error: " + files[i].getPath() + " does not contain a readable image.");
+					image = null;
 				}
-			} else if (files[i].isDirectory()) {
-				images.addAll(addImagesFromDirectory(files[i]));
+				if (image == null) {
+					System.out.println(file.getPath() + " does not contain a readable image, and is being skipped.");
+					continue;
+				}
+				if (image.getWidth() != inputLength || image.getHeight() != inputLength) {
+					System.out.println(file.getPath() + " has an invalid resolution of " +
+							image.getWidth() + "x" + image.getHeight() + " pixels, and is being skipped.");
+					continue;
+				}
+				images.add(image);
+			} else if (file.isDirectory()) {
+				images.addAll(addImagesFromDirectory(file));
 			}
 		}
 		return images;
