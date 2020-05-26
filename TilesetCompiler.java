@@ -71,11 +71,12 @@ public class TilesetCompiler {
 		for (int y = 0; y < tileset.getHeight(); y += inputLength) {
 			for (int x = 0; x < tileset.getWidth(); x += inputLength) {
 				for (int imageY = 0; imageY < inputLength; imageY++) {
+					int defaultARGBValue = -16777216;
 					for (int imageX = 0; imageX < inputLength; imageX++) {
 						if (imageIndex < images.size()) {
 							tileset.setRGB(x + imageX, y + imageY, images.get(imageIndex).getRGB(imageX, imageY));
 						} else {
-							tileset.setRGB(x + imageX, y + imageY, -1);
+							tileset.setRGB(x + imageX, y + imageY, defaultARGBValue);
 						}
 					}
 				}
